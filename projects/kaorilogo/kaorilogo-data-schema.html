@@ -99,7 +99,7 @@
 <body>
 
   <h1>KAORILOGO AIコンシェルジュ｜データスキーマ定義書</h1>
-  <div class="subtitle">作成日: 2026-03-22　／　対象: kaorilogo-products.json および今後追加予定のデータ</div>
+  <div class="subtitle">作成日: 2026-03-22　／　最終更新: 2026-03-23　／　対象: プロトタイプ（Node.js版）実装ベース</div>
 
   <!-- 凡例 -->
   <div class="legend">
@@ -123,7 +123,7 @@
 
   <!-- ① 商品マスタ -->
   <h2>① 商品マスタ（products）</h2>
-  <p class="section-desc">各アロマ商品の基本情報。現在28件。JSONファイル: <code>kaorilogo-products.json</code></p>
+  <p class="section-desc">各アロマ商品の基本情報。プロトタイプ対象: <strong>13件</strong>（Life of Aromaブレンド5件・エッセンシャルオイル5件・KAORILOGOオリジナル3件）。参照: <code>kaorilogo-products.json</code> および <code>server.js</code> 商品データセクション</p>
   <table>
     <thead>
       <tr>
@@ -227,9 +227,9 @@
     </tbody>
   </table>
 
-  <!-- ② 6軸スコア -->
-  <h2>② 6軸スコア（axes）</h2>
-  <p class="section-desc">products テーブルに内包。products.id を外部キーとして参照。すべて<span class="badge badge-us">こちらで付与</span>した値。</p>
+  <!-- ② 6軸スコア（プロファイル） -->
+  <h2>② 6軸プロファイル（profile）</h2>
+  <p class="section-desc">AIが会話から自動的に推定・更新するユーザープロファイル。スコアはAIが内部でアサイン。<strong>現行実装: INT (-2〜+2) または文字列・null</strong>。すべて<span class="badge badge-us">こちらで付与</span>。</p>
   <table>
     <thead>
       <tr>
@@ -243,67 +243,139 @@
     </thead>
     <tbody>
       <tr>
-        <td class="field-en">axes.product_id</td>
-        <td>商品ID（参照）</td>
-        <td class="type-cell">VARCHAR(50)</td>
-        <td><span class="badge badge-fk">FK</span><span class="badge badge-nn">NOT NULL</span></td>
-        <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">→ products.id</td>
-      </tr>
-      <tr>
-        <td class="field-en">axes.activation</td>
+        <td class="field-en">profile.activation</td>
         <td>活性度</td>
-        <td class="type-cell">TINYINT (1–10)</td>
-        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="type-cell">INT (-2〜+2)</td>
+        <td><span class="badge badge-null">NULL可</span></td>
         <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">1=深い鎮静・睡眠　↔　10=高い活性・集中</td>
+        <td class="note">-2=深い鎮静・睡眠　↔　+2=高い活性・集中。未判定時はnull</td>
       </tr>
       <tr>
-        <td class="field-en">axes.warmth</td>
-        <td>温かみ</td>
-        <td class="type-cell">TINYINT (1–10)</td>
-        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="field-en">profile.sensory</td>
+        <td>感覚傾向</td>
+        <td class="type-cell">INT (-2〜+2)</td>
+        <td><span class="badge badge-null">NULL可</span></td>
         <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">1=クール・爽やか・シャープ　↔　10=ウォーム・甘み・まろやか</td>
+        <td class="note">-2=クール・爽やか・シャープ　↔　+2=ウォーム・甘み・まろやか</td>
       </tr>
       <tr>
-        <td class="field-en">axes.social</td>
+        <td class="field-en">profile.social</td>
         <td>社交性</td>
-        <td class="type-cell">TINYINT (1–10)</td>
-        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="type-cell">INT (-2〜+2)</td>
+        <td><span class="badge badge-null">NULL可</span></td>
         <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">1=プライベート・内向き　↔　10=パブリック・コミュニケーション</td>
+        <td class="note">-2=プライベート・内向き　↔　+2=パブリック・コミュニケーション</td>
       </tr>
       <tr>
-        <td class="field-en">axes.formal</td>
+        <td class="field-en">profile.formality</td>
         <td>フォーマル度</td>
-        <td class="type-cell">TINYINT (1–10)</td>
-        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="type-cell">INT (-2〜+2)</td>
+        <td><span class="badge badge-null">NULL可</span></td>
         <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">1=カジュアル・現代的　↔　10=フォーマル・伝統・信頼感</td>
+        <td class="note">-2=カジュアル・現代的　↔　+2=フォーマル・伝統・信頼感</td>
       </tr>
       <tr>
-        <td class="field-en">axes.confidence</td>
-        <td>スコア信頼度</td>
-        <td class="type-cell">ENUM</td>
-        <td><span class="badge badge-nn">NOT NULL</span><span class="badge badge-enum">ENUM</span></td>
+        <td class="field-en">profile.scene</td>
+        <td>使用シーン</td>
+        <td class="type-cell">STRING | null</td>
+        <td><span class="badge badge-null">NULL可</span><span class="badge badge-enum">ENUM的</span></td>
         <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">'high' | 'medium' | 'low'　※medium以下は訪問後に要確認</td>
+        <td class="note">'work' | 'bedroom' | 'living' | 'gift' | 'travel' など。未判定時はnull</td>
       </tr>
       <tr>
-        <td class="field-en">axes.score_source</td>
-        <td>スコア根拠</td>
-        <td class="type-cell">ENUM</td>
-        <td><span class="badge badge-nn">NOT NULL</span><span class="badge badge-enum">ENUM</span></td>
+        <td class="field-en">profile.time</td>
+        <td>使用時間帯</td>
+        <td class="type-cell">STRING | null</td>
+        <td><span class="badge badge-null">NULL可</span><span class="badge badge-enum">ENUM的</span></td>
         <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">'standard_aromatherapy' | 'product_description'</td>
+        <td class="note">'morning' | 'daytime' | 'evening' | 'night' | 'anytime' など。未判定時はnull</td>
       </tr>
     </tbody>
   </table>
 
-  <!-- ③ 今後追加予定 -->
-  <h2>③ 今後追加予定のフィールド</h2>
-  <p class="section-desc">訪問ヒアリングやサイト実装に合わせて追加していく項目。</p>
+  <!-- ③ AIレスポンスJSONスキーマ -->
+  <h2>③ AIレスポンスJSONスキーマ（/api/chat レスポンス）</h2>
+  <p class="section-desc">Claude APIから返却されるJSONの構造定義。server.jsでパースしてフロントエンドに渡す。</p>
+  <table>
+    <thead>
+      <tr>
+        <th>フィールド名</th>
+        <th>日本語名</th>
+        <th>データ型</th>
+        <th>制約</th>
+        <th>備考</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="field-en">reply</td>
+        <td>AIの返答テキスト</td>
+        <td class="type-cell">STRING</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note">チャット画面に表示するテキスト</td>
+      </tr>
+      <tr>
+        <td class="field-en">profile</td>
+        <td>6軸プロファイル</td>
+        <td class="type-cell">OBJECT</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note">② の6軸を含むオブジェクト。各軸はnullまたはスコア値</td>
+      </tr>
+      <tr>
+        <td class="field-en">filled_axes</td>
+        <td>判定済み軸数</td>
+        <td class="type-cell">INT (0〜6)</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note">4以上でhearingからproposalモードへ自動移行</td>
+      </tr>
+      <tr>
+        <td class="field-en">current_agent</td>
+        <td>現在のモード</td>
+        <td class="type-cell">ENUM</td>
+        <td><span class="badge badge-nn">NOT NULL</span><span class="badge badge-enum">ENUM</span></td>
+        <td class="note">'hearing' | 'proposal' | 'closing'　の3モード自律切替</td>
+      </tr>
+      <tr>
+        <td class="field-en">recommendations</td>
+        <td>推薦商品リスト</td>
+        <td class="type-cell">ARRAY (max 5件)</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note">全13商品を内部スコアリングし上位5件のみ返却</td>
+      </tr>
+      <tr>
+        <td class="field-en">recommendations[].rank</td>
+        <td>順位</td>
+        <td class="type-cell">INT (1〜5)</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td class="field-en">recommendations[].product</td>
+        <td>商品名</td>
+        <td class="type-cell">STRING</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note">① 商品マスタの name と対応</td>
+      </tr>
+      <tr>
+        <td class="field-en">recommendations[].match_score</td>
+        <td>マッチスコア</td>
+        <td class="type-cell">INT (0〜100)</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note">プロファイルとの一致度。フロントの進捗バーに表示</td>
+      </tr>
+      <tr>
+        <td class="field-en">recommendations[].reason</td>
+        <td>推薦理由</td>
+        <td class="type-cell">STRING</td>
+        <td><span class="badge badge-nn">NOT NULL</span></td>
+        <td class="note">1行の推薦理由テキスト。推薦パネルに表示</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ④ 今後追加予定 -->
+  <h2>④ 今後追加予定のフィールド</h2>
+  <p class="section-desc">本番実装・BASEサイト連携時に追加が必要な項目。</p>
   <table>
     <thead>
       <tr>
@@ -322,7 +394,7 @@
         <td class="type-cell">INT</td>
         <td><span class="badge badge-null">NULL可</span></td>
         <td><span class="badge badge-site">サイト情報</span></td>
-        <td class="note">🔴 高：推薦カードに価格表示が必要。ECサイトで確認要</td>
+        <td class="note">🔴 高：推薦カードに価格表示が必要。BASEサイトで確認要</td>
       </tr>
       <tr>
         <td class="field-en">image_url</td>
@@ -331,6 +403,14 @@
         <td><span class="badge badge-null">NULL可</span></td>
         <td><span class="badge badge-site">サイト情報</span></td>
         <td class="note">🔴 高：推薦カードのビジュアルに必須</td>
+      </tr>
+      <tr>
+        <td class="field-en">base_url</td>
+        <td>BASEショップURL</td>
+        <td class="type-cell">TEXT</td>
+        <td><span class="badge badge-null">NULL可</span></td>
+        <td><span class="badge badge-site">サイト情報</span></td>
+        <td class="note">🔴 高：推薦結果から直接購入ページへの遷移に使用（lifeofaroma.thebase.in）</td>
       </tr>
       <tr>
         <td class="field-en">stock_status</td>
@@ -348,27 +428,11 @@
         <td><span class="badge badge-us">ヒアリング取得</span></td>
         <td class="note">🟡 中：鶴香・瀬戸の香のaxesスコア精度向上に必要</td>
       </tr>
-      <tr>
-        <td class="field-en">counseling_notes</td>
-        <td>カウンセリング推薦基準</td>
-        <td class="type-cell">TEXT</td>
-        <td><span class="badge badge-null">NULL可</span></td>
-        <td><span class="badge badge-us">ヒアリング取得</span></td>
-        <td class="note">🔴 高：AI会話フロー設計の根拠。訪問時に取得</td>
-      </tr>
-      <tr>
-        <td class="field-en">axes.intensity<br>axes.nature</td>
-        <td>強度・自然感（追加2軸）</td>
-        <td class="type-cell">TINYINT (1–10)</td>
-        <td><span class="badge badge-null">NULL可</span></td>
-        <td><span class="badge badge-us">こちらで付与</span></td>
-        <td class="note">🟡 中：4軸→6軸拡張。軸定義はKAORILOGO訪問後に確定</td>
-      </tr>
     </tbody>
   </table>
 
   <div style="margin-top: 40px; font-size: 12px; color: #aaa;">
-    最終更新: 2026-03-22　／　次回更新タイミング: KAORILOGOさん訪問後
+    最終更新: 2026-03-23　／　次回更新タイミング: BASEサイト連携・本番実装時
   </div>
 
 </body>
