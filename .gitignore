@@ -9,5 +9,11 @@ mercari-items/
 *.mp4
 *.mov
 
+# Node.js依存パッケージ（npm installで再生成可能）
+node_modules/
+
+# JSONデータファイル（生成物・一時データ）
+*.json
+
 # macOS
 .DS_Store

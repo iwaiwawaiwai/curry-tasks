@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAORILOGO</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FAF7F4;
+      --panel: #FFFFFF;
+      --border: #E8E0D8;
+      --primary: #6B5744;
+      --accent: #A8845C;
+      --text: #3D2E24;
+      --text-soft: #8A7268;
+      --ai-bubble: #F5F0EB;
+      --user-bubble: #6B5744;
+      --score-bar: #C9A87C;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.05em; color: var(--primary); cursor: pointer; }
+    header h1:hover { opacity: 0.7; }
+    header p  { font-size: 12px; color: var(--text-soft); }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ── 左カラム: チャット ── */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bubble-wrap { display: flex; }
+    .bubble-wrap.user { justify-content: flex-end; }
+    .bubble-wrap.ai   { justify-content: flex-start; }
+
+    .bubble {
+      max-width: 72%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .bubble.ai {
+      background: var(--ai-bubble);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+    .bubble.user {
+      background: var(--user-bubble);
+      border-bottom-right-radius: 4px;
+      color: #fff;
+    }
+
+    .agent-badge {
+      font-size: 10px;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+      padding-left: 2px;
+    }
+
+    .input-area {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      gap: 10px;
+    }
+    #user-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      background: var(--bg);
+      color: var(--text);
+    }
+    #user-input:focus { border-color: var(--accent); }
+    #send-btn {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #send-btn:hover { background: var(--primary); }
+    #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── 右カラム ── */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+      overflow-y: auto;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-soft);
+      letter-spacing: 0.06em;
+      padding: 16px 20px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* プロファイル */
+    .profile-section { padding: 14px 20px; border-bottom: 1px solid var(--border); }
+    .profile-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    .axis-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .axis-label { font-size: 11px; color: var(--text-soft); width: 52px; flex-shrink: 0; }
+    .axis-bar-wrap { flex: 1; position: relative; height: 6px; background: var(--border); border-radius: 3px; }
+    .axis-bar {
+      position: absolute;
+      top: 0; bottom: 0;
+      background: var(--score-bar);
+      border-radius: 3px;
+      transition: left 0.4s, width 0.4s;
+    }
+    .axis-value { font-size: 11px; color: var(--text); width: 64px; flex-shrink: 0; text-align: right; }
+
+    .axis-tag {
+      display: inline-block;
+      background: #F5EDE3;
+      color: var(--accent);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+    }
+    .axis-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    /* おすすめ */
+    .reco-section { padding: 14px 20px; }
+    .reco-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    .reco-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 5px;
+      transition: border-color 0.2s;
+    }
+    .reco-card:hover { border-color: var(--accent); }
+
+    .reco-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+    .reco-rank {
+      width: 17px; height: 17px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .reco-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .reco-score { margin-left: auto; font-size: 11px; color: var(--accent); font-weight: 600; }
+    .reco-reason { font-size: 10px; color: var(--text-soft); line-height: 1.4; }
+    .reco-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 1px 8px;
+    }
+    .reco-link:hover { background: var(--accent); color: #fff; }
+
+    .empty-state {
+      font-size: 12px;
+      color: var(--text-soft);
+      text-align: center;
+      padding: 20px;
+    }
+
+    .thinking { opacity: 0.5; font-style: italic; font-size: 13px; }
+
+    /* ── シーン選択 ── */
+    .scene-choices {
+      padding: 10px 20px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .scene-choices.hidden { display: none; }
+    .scene-btn {
+      padding: 8px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .scene-btn:hover {
+      border-color: var(--accent);
+      background: #FDF5ED;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>KAORILOGO</h1>
+  <p>あなたにぴったりの香りを見つけよう</p>
+</header>
+
+<main>
+  <!-- 左: チャット -->
+  <div class="chat-panel">
+    <div id="chat-messages"></div>
+    <div class="scene-choices" id="scene-choices">
+      <button class="scene-btn" data-scene="仕事中・在宅ワーク中に使いたい">🏢 仕事中・在宅</button>
+      <button class="scene-btn" data-scene="寝る前、寝室で使いたい">🛏️ 寝る前・寝室</button>
+      <button class="scene-btn" data-scene="リビングでくつろぐときに使いたい">🛋️ リビングでくつろぐ</button>
+      <button class="scene-btn" data-scene="外出やお出かけのときに使いたい">🚶 外出・お出かけ</button>
+      <button class="scene-btn" data-scene="ギフト・プレゼント用に選びたい">🎁 ギフト・プレゼント用</button>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="どんな気分ですか？どんな場面で使いたいですか？" />
+      <button id="send-btn">送信</button>
+    </div>
+  </div>
+
+  <!-- 右: プロファイル + おすすめ -->
+  <div class="right-panel">
+    <div class="section-title">🌸 あなたの香りのプロファイル</div>
+    <div class="profile-section">
+      <div id="profile-axes"></div>
+      <div id="profile-tags" class="axis-tags"></div>
+    </div>
+
+    <div class="section-title">✨ おすすめの香り（全商品）</div>
+    <div class="reco-section">
+      <div id="reco-list"><div class="empty-state">会話を始めると<br>おすすめが表示されます</div></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const chatEl      = document.getElementById('chat-messages');
+  const inputEl     = document.getElementById('user-input');
+  const sendBtn     = document.getElementById('send-btn');
+  const axesEl      = document.getElementById('profile-axes');
+  const tagsEl      = document.getElementById('profile-tags');
+  const recoEl      = document.getElementById('reco-list');
+  const sceneChoices = document.getElementById('scene-choices');
+
+  let history = [];
+  let currentProfile = { activation: null, sensory: null, social: null, formality: null, scene: null, time: null };
+
+function initChat() {
+    history = [];
+    currentProfile = { activation: null, sensory: null, social: null, formality: null, scene: null, time: null };
+    chatEl.innerHTML = '';
+    axesEl.innerHTML = '';
+    tagsEl.innerHTML = '';
+    recoEl.innerHTML = '<div class="empty-state">会話を始めると<br>おすすめが表示されます</div>';
+    sceneChoices.classList.remove('hidden');
+    addBubble('ai', 'こんにちは！どんな場面で香りを使いたいですか？\nたとえば「仕事中」「寝る前」「外出のとき」など、ふとした気分でも大丈夫ですよ。', 'hearing');
+  }
+
+  // 初期化
+  initChat();
+
+  // ヘッダークリックでリセット
+  document.querySelector('header h1').addEventListener('click', () => {
+    if (history.length > 0 && !confirm('会話をリセットしますか？')) return;
+    initChat();
+  });
+
+  // 軸ラベル定義
+  const AXIS_DEF = {
+    activation: { label: '気分',    min: '鎮静',   max: '活性' },
+    sensory:    { label: '香りの系統', min: '甘め',   max: '爽やか' },
+    social:     { label: '場',      min: 'みんなと', max: 'ひとりで' },
+    formality:  { label: 'スタイル', min: 'フォーマル', max: 'カジュアル' },
+  };
+
+  function addBubble(role, text, agent) {
+    const wrap = document.createElement('div');
+    wrap.className = `bubble-wrap ${role}`;
+
+    if (role === 'ai') {
+      const badge = document.createElement('div');
+      badge.className = 'agent-badge';
+      badge.textContent = agentLabel(agent);
+      wrap.appendChild(badge);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${role}`;
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    chatEl.appendChild(wrap);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  function agentLabel(agent) {
+    if (agent === 'proposal') return 'おすすめ中';
+    if (agent === 'closing')  return 'ご購入について';
+    return 'ヒアリング中';
+  }
+
+  function renderProfile(profile) {
+    axesEl.innerHTML = '';
+    const numericAxes = ['activation', 'sensory', 'social', 'formality'];
+    numericAxes.forEach(key => {
+      const val = profile[key];
+      const def = AXIS_DEF[key];
+      const item = document.createElement('div');
+      item.className = 'axis-item';
+
+      const label = document.createElement('div');
+      label.className = 'axis-label';
+      label.textContent = def.label;
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'axis-bar-wrap';
+
+      if (val !== null) {
+        const bar = document.createElement('div');
+        bar.className = 'axis-bar';
+        // -2〜+2 を 0〜100% にマッピング。中央(0)から伸びるバー
+        const center = 50;
+        const pct = (val / 2) * 40; // 最大±40%
+        bar.style.left   = pct >= 0 ? `${center}%` : `${center + pct}%`;
+        bar.style.width  = `${Math.abs(pct)}%`;
+        barWrap.appendChild(bar);
+      }
+
+      const valueEl = document.createElement('div');
+      valueEl.className = 'axis-value';
+      if (val === null) {
+        valueEl.textContent = '—';
+        valueEl.style.color = '#ccc';
+      } else {
+        valueEl.textContent = val < 0 ? def.min : val > 0 ? def.max : '中間';
+      }
+
+      item.appendChild(label);
+      item.appendChild(barWrap);
+      item.appendChild(valueEl);
+      axesEl.appendChild(item);
+    });
+
+    // scene / time はタグ表示
+    tagsEl.innerHTML = '';
+    ['scene', 'time'].forEach(key => {
+      if (profile[key]) {
+        const tag = document.createElement('span');
+        tag.className = 'axis-tag';
+        tag.textContent = key === 'scene' ? `📍 ${profile[key]}` : `🕐 ${profile[key]}`;
+        tagsEl.appendChild(tag);
+      }
+    });
+  }
+
+  function renderRecommendations(list, agent) {
+    if (!list || list.length === 0) return;
+    recoEl.innerHTML = '';
+    const showLinks = (agent === 'closing');
+    list.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'reco-card';
+      const slug = r.product.replace(/\s+/g, '-').toLowerCase();
+      const linkHtml = showLinks
+        ? `<a class="reco-link" href="https://kaorilogo.com/products/${slug}" target="_blank">詳細・購入 →</a>`
+        : '';
+      card.innerHTML = `
+        <div class="reco-header">
+          <div class="reco-rank">${r.rank}</div>
+          <div class="reco-name">${r.product}</div>
+          <div class="reco-score">${r.match_score}%</div>
+        </div>
+        <div class="reco-reason">${r.reason}</div>
+        ${linkHtml}
+      `;
+      recoEl.appendChild(card);
+    });
+  }
+
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = '';
+    sendBtn.disabled = true;
+    sceneChoices.classList.add('hidden');
+    addBubble('user', text, null);
+
+    // thinking表示
+    const thinkingWrap = document.createElement('div');
+    thinkingWrap.className = 'bubble-wrap ai';
+    const thinkingBubble = document.createElement('div');
+    thinkingBubble.className = 'bubble ai thinking';
+    thinkingBubble.textContent = '考えています…';
+    thinkingWrap.appendChild(thinkingBubble);
+    chatEl.appendChild(thinkingWrap);
+    chatEl.scrollTop = chatEl.scrollHeight;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history }),
+      });
+      const data = await res.json();
+
+      chatEl.removeChild(thinkingWrap);
+
+      if (data.error) {
+        addBubble('ai', `エラーが発生しました: ${data.error}`, 'hearing');
+      } else {
+        addBubble('ai', data.reply, data.current_agent);
+
+        // 会話履歴を更新
+        history.push({ role: 'user', content: text });
+        history.push({ role: 'assistant', content: JSON.stringify(data) });
+
+        // 右パネル更新
+        if (data.profile) {
+          currentProfile = data.profile;
+          renderProfile(currentProfile);
+        }
+        if (data.recommendations && data.recommendations.length > 0) {
+          renderRecommendations(data.recommendations, data.current_agent);
+        }
+      }
+    } catch (err) {
+      chatEl.removeChild(thinkingWrap);
+      addBubble('ai', 'ネットワークエラーが発生しました。', 'hearing');
+    }
+
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); });
+
+  // シーン選択ボタン
+  sceneChoices.querySelectorAll('.scene-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const scene = btn.dataset.scene;
+      inputEl.value = scene;
+      sceneChoices.classList.add('hidden');
+      sendMessage();
+    });
+  });
+
+  // 初期プロファイル表示
+  renderProfile(currentProfile);
+</script>
+</body>
+</html>
