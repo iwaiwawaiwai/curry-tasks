@@ -103,6 +103,7 @@
       background: var(--ai-bubble);
       border-bottom-left-radius: 4px;
       color: var(--text);
+      white-space: pre-line;
     }
     .bubble.user {
       background: var(--user-bubble);
@@ -115,6 +116,13 @@
       color: var(--text-soft);
       margin-bottom: 4px;
       padding-left: 2px;
+    }
+    .agent-badge-progress {
+      font-size: 10px;
+      color: var(--text-soft);
+      padding-left: 2px;
+      margin-top: -2px;
+      margin-bottom: 4px;
     }
 
     .input-area {
@@ -179,11 +187,17 @@
     .axis-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
-    .axis-label { font-size: 11px; color: var(--text-soft); width: 52px; flex-shrink: 0; }
-    .axis-bar-wrap { flex: 1; position: relative; height: 6px; background: var(--border); border-radius: 3px; }
+    .axis-label-full {
+      font-size: 10px;
+      color: var(--text-soft);
+      white-space: nowrap;
+      flex-shrink: 0;
+      width: 168px;
+    }
+    .axis-bar-wrap { flex: 1; position: relative; height: 6px; background: var(--border); border-radius: 3px; min-width: 40px; }
     .axis-bar {
       position: absolute;
       top: 0; bottom: 0;
@@ -191,7 +205,6 @@
       border-radius: 3px;
       transition: left 0.4s, width 0.4s;
     }
-    .axis-value { font-size: 11px; color: var(--text); width: 64px; flex-shrink: 0; text-align: right; }
 
     .axis-tag {
       display: inline-block;
@@ -204,16 +217,29 @@
     }
     .axis-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 
+    /* おすすめカード内 商品軸ミニバー */
+    .reco-axes { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+    .reco-axis-item { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+    .reco-axis-label { font-size: 9px; color: var(--text-soft); width: 36px; flex-shrink: 0; }
+    .reco-axis-bar-wrap { flex: 1; position: relative; height: 3px; background: var(--border); border-radius: 2px; }
+    .reco-axis-bar { position: absolute; top: 0; bottom: 0; background: var(--score-bar); border-radius: 2px; transition: left 0.3s, width 0.3s; }
+    .reco-card.rank-1 .reco-axis-bar { background: var(--gold); }
+    .reco-axis-scene { font-size: 9px; color: var(--text-soft); margin-top: 2px; }
+
     /* おすすめ（右パネル） */
     .reco-section { padding: 14px 20px; }
 
     .reco-card {
+      display: block;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 12px;
       margin-bottom: 6px;
       transition: border-color 0.2s;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
     }
     .reco-card:hover { border-color: var(--accent); }
     .reco-card.rank-1 {
@@ -242,18 +268,12 @@
     .reco-score-bar { height: 3px; background: var(--score-bar); border-radius: 2px; transition: width 0.5s; }
     .reco-card.rank-1 .reco-score-bar { background: var(--gold); }
 
-    .reco-reason { font-size: 11px; color: var(--text-soft); line-height: 1.5; }
-    .reco-link {
-      display: inline-block;
-      margin-top: 5px;
-      font-size: 10px;
-      color: var(--accent);
-      text-decoration: none;
-      border: 1px solid var(--accent);
-      border-radius: 8px;
-      padding: 1px 8px;
-    }
-    .reco-link:hover { background: var(--accent); color: #fff; }
+    .reco-reason { font-size: 11px; color: var(--text-soft); line-height: 1.5; margin-bottom: 4px; }
+    .reco-type-badge { font-size: 10px; color: var(--text-soft); background: var(--border); padding: 0 5px; border-radius: 4px; margin-left: 4px; flex-shrink: 0; }
+    .reco-meta { font-size: 10px; color: var(--text-soft); margin-bottom: 3px; }
+    .reco-meta-label { color: var(--text-soft); margin-right: 3px; }
+    .reco-meta-ingredients { color: var(--text-soft); }
+    .reco-meta-unverified { color: #e08c00; font-size: 9px; font-weight: 600; }
 
     /* チャット内フィーチャードカード */
     .featured-card {
@@ -468,7 +488,7 @@
       <div id="profile-tags" class="axis-tags"></div>
     </div>
 
-    <div class="section-title">✨ おすすめの香り（全商品）</div>
+    <div class="section-title">✨ おすすめの香り（上位5品）</div>
     <div class="reco-section">
       <div id="reco-list"><div class="empty-state">会話を始めると<br>おすすめが表示されます</div></div>
     </div>
@@ -479,13 +499,32 @@
   const chatEl  = document.getElementById('chat-messages');
   const inputEl = document.getElementById('user-input');
   const sendBtn = document.getElementById('send-btn');
-  const axesEl  = document.getElementById('profile-axes');
-  const tagsEl  = document.getElementById('profile-tags');
-  const recoEl  = document.getElementById('reco-list');
+  const axesEl = document.getElementById('profile-axes');
+  const tagsEl = document.getElementById('profile-tags');
+  const recoEl = document.getElementById('reco-list');
 
   let history = [];
   let currentProfile = { activation: null, sensory: null, social: null, formality: null, scene: null, time: null };
   let prevAgent = 'hearing';
+
+  // 商品メタデータ（種別・成分）
+  // ⚠️ 成分に【要確認】マークがついているものは暫定データです。
+  //    ヒアリング時に香りロゴさんへ実際の配合を確認してください。
+  const PRODUCT_META = {
+    'ON Time':          { type: 'ブレンドオイル', ingredients: ['ローズマリー', 'レモン', 'スペアミント', 'ユーカリ'], verified: false },
+    'OFF Time':         { type: 'ブレンドオイル', ingredients: ['ラベンダー', 'スイートオレンジ', 'グレープフルーツ', 'ホーリーフ'], verified: false },
+    'All Time':         { type: 'ブレンドオイル', ingredients: ['マンダリン', 'スイートオレンジ', 'レモン', 'プチグレン'], verified: false },
+    '認知AM':           { type: 'ブレンドオイル', ingredients: ['ローズマリー', 'レモン', 'スペアミント', 'ユーカリ'], verified: false },
+    '認知PM':           { type: 'ブレンドオイル', ingredients: ['ラベンダー', 'ベルガモット', 'オレンジスイート'], verified: false },
+    '瀬戸の香':         { type: 'ブレンドオイル', ingredients: ['広島産レモン', 'サイプレス', 'シダーウッド', 'ローズマリー'], verified: false },
+    '鶴香・未来':       { type: 'ブレンドオイル', ingredients: ['レモン', 'ライム', 'グレープフルーツ'], verified: false },
+    'Upcycled Citron':  { type: 'ブレンドオイル', ingredients: ['広島産レモン', 'ローズマリー', 'ティアレ', 'ムスク'], verified: false },
+    'ラベンダー':       { type: 'エッセンシャルオイル', ingredients: [], verified: true },
+    'ローズマリー':     { type: 'エッセンシャルオイル', ingredients: [], verified: true },
+    'レモン':           { type: 'エッセンシャルオイル', ingredients: [], verified: true },
+    'ベルガモット':     { type: 'エッセンシャルオイル', ingredients: [], verified: true },
+    'ペパーミント':     { type: 'エッセンシャルオイル', ingredients: [], verified: true },
+  };
 
   // シーン定義（画像生成後は key.png を参照）
   const SCENES = [
@@ -568,13 +607,25 @@
 
   // 軸ラベル定義
   const AXIS_DEF = {
-    activation: { label: '気分',    min: '鎮静',   max: '活性' },
-    sensory:    { label: '香りの系統', min: '甘め',   max: '爽やか' },
-    social:     { label: '場',      min: 'みんなと', max: 'ひとりで' },
+    activation: { label: '気分',     min: '鎮静',    max: '活性' },
+    sensory:    { label: '香り系統',  min: '甘め',    max: '爽やか' },
+    social:     { label: '場',       min: 'みんなと', max: 'ひとりで' },
     formality:  { label: 'スタイル', min: 'フォーマル', max: 'カジュアル' },
+    time:       { label: '時間帯',   min: '朝・早朝', max: '夜・深夜' },
   };
 
-  function addBubble(role, text, agent) {
+  // time文字列を -2〜+2 に変換
+  function timeToValue(t) {
+    if (!t) return null;
+    if (/早朝|明け方/.test(t)) return -2;
+    if (/朝/.test(t))          return -1;
+    if (/昼|午後|正午/.test(t)) return 0;
+    if (/夕方|夕|夜前/.test(t)) return 1;
+    if (/夜|深夜/.test(t))     return 2;
+    return 0;
+  }
+
+  function addBubble(role, text, agent, filledAxes) {
     const wrap = document.createElement('div');
     wrap.className = `bubble-wrap ${role}`;
 
@@ -583,6 +634,12 @@
       badge.className = 'agent-badge';
       badge.textContent = agentLabel(agent);
       wrap.appendChild(badge);
+      if (agent === 'hearing' && filledAxes !== undefined) {
+        const pct = document.createElement('div');
+        pct.className = 'agent-badge-progress';
+        pct.textContent = `${Math.round(filledAxes / 6 * 100)}%`;
+        wrap.appendChild(pct);
+      }
     }
 
     const bubble = document.createElement('div');
@@ -599,58 +656,121 @@
     return 'ヒアリング中';
   }
 
-  function renderProfile(profile) {
-    axesEl.innerHTML = '';
-    const numericAxes = ['activation', 'sensory', 'social', 'formality'];
-    numericAxes.forEach(key => {
-      const val = profile[key];
-      const def = AXIS_DEF[key];
-      const item = document.createElement('div');
-      item.className = 'axis-item';
+  // 商品ごとの6軸データ（暫定値、verified:false は要確認）
+  const PRODUCT_AXES = {
+    'ON Time':         { activation: +2, sensory:  0, social:  0, formality: +1, time: -1, scene: '仕事・在宅' },
+    'OFF Time':        { activation: -2, sensory: -1, social: -1, formality: -1, time: +2, scene: '寝室・リビング' },
+    'All Time':        { activation:  0, sensory:  0, social:  0, formality:  0, time:  0, scene: 'どこでも' },
+    '認知AM':          { activation: +1, sensory:  0, social: +1, formality: +1, time: -1, scene: '仕事' },
+    '認知PM':          { activation: -1, sensory:  0, social: -1, formality: +1, time: +2, scene: '仕事後' },
+    'ラベンダー':      { activation: -2, sensory: -1, social: -1, formality: -1, time: +2, scene: '寝室' },
+    'ローズマリー':    { activation: +2, sensory: +1, social: +1, formality: +1, time: -1, scene: '仕事・勉強' },
+    'レモン':          { activation: +1, sensory: +2, social: +1, formality:  0, time:  0, scene: 'どこでも' },
+    'ベルガモット':    { activation: -1, sensory: +1, social: -1, formality: -1, time: +1, scene: 'リビング' },
+    'ペパーミント':    { activation: +2, sensory: +2, social: +1, formality: +1, time:  0, scene: '仕事・運動' },
+    '瀬戸の香':        { activation: +1, sensory: +1, social: -1, formality: -1, time:  0, scene: 'リビング・外出' },
+    '鶴香・未来':      { activation:  0, sensory: +1, social: +1, formality: +1, time:  0, scene: 'どこでも' },
+    'Upcycled Citron': { activation: +1, sensory: +1, social: -1, formality: -1, time:  0, scene: 'リビング・外出' },
+  };
 
-      const label = document.createElement('div');
-      label.className = 'axis-label';
-      label.textContent = def.label;
+  function renderAxisBar(key, val) {
+    const def = AXIS_DEF[key];
+    const item = document.createElement('div');
+    item.className = 'axis-item';
 
+    const labelEl = document.createElement('div');
+    labelEl.className = 'axis-label-full';
+    labelEl.textContent = `${def.label}（${def.min} ↔ ${def.max}）`;
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'axis-bar-wrap';
+
+    if (val !== null) {
+      const bar = document.createElement('div');
+      bar.className = 'axis-bar';
+      const center = 50;
+      const pct = (val / 2) * 40;
+      bar.style.left  = pct >= 0 ? `${center}%` : `${center + pct}%`;
+      bar.style.width = `${Math.abs(pct)}%`;
+      barWrap.appendChild(bar);
+    }
+
+    item.appendChild(labelEl);
+    item.appendChild(barWrap);
+    return item;
+  }
+
+  function renderMiniAxes(productName) {
+    const axes = PRODUCT_AXES[productName];
+    if (!axes) return null;
+    const wrap = document.createElement('div');
+    wrap.className = 'reco-axes';
+    const numericKeys = [
+      { key: 'activation', label: '気分' },
+      { key: 'sensory',    label: '香り' },
+      { key: 'social',     label: '場' },
+      { key: 'formality',  label: 'スタイル' },
+      { key: 'time',       label: '時間帯' },
+    ];
+    numericKeys.forEach(({ key, label }) => {
+      const val = axes[key];
+      const row = document.createElement('div');
+      row.className = 'reco-axis-item';
+      const lbl = document.createElement('div');
+      lbl.className = 'reco-axis-label';
+      lbl.textContent = label;
       const barWrap = document.createElement('div');
-      barWrap.className = 'axis-bar-wrap';
-
-      if (val !== null) {
+      barWrap.className = 'reco-axis-bar-wrap';
+      if (val !== null && val !== undefined) {
         const bar = document.createElement('div');
-        bar.className = 'axis-bar';
-        // -2〜+2 を 0〜100% にマッピング。中央(0)から伸びるバー
+        bar.className = 'reco-axis-bar';
         const center = 50;
-        const pct = (val / 2) * 40; // 最大±40%
-        bar.style.left   = pct >= 0 ? `${center}%` : `${center + pct}%`;
-        bar.style.width  = `${Math.abs(pct)}%`;
+        const pct = (val / 2) * 40;
+        bar.style.left  = pct >= 0 ? `${center}%` : `${center + pct}%`;
+        bar.style.width = `${Math.abs(pct)}%`;
         barWrap.appendChild(bar);
       }
+      row.appendChild(lbl);
+      row.appendChild(barWrap);
+      wrap.appendChild(row);
+    });
+    if (axes.scene) {
+      const sceneEl = document.createElement('div');
+      sceneEl.className = 'reco-axis-scene';
+      sceneEl.textContent = `📍 ${axes.scene}`;
+      wrap.appendChild(sceneEl);
+    }
+    return wrap;
+  }
 
-      const valueEl = document.createElement('div');
-      valueEl.className = 'axis-value';
-      if (val === null) {
-        valueEl.textContent = '—';
-        valueEl.style.color = '#ccc';
-      } else {
-        valueEl.textContent = val < 0 ? def.min : val > 0 ? def.max : '中間';
-      }
-
-      item.appendChild(label);
-      item.appendChild(barWrap);
-      item.appendChild(valueEl);
-      axesEl.appendChild(item);
+  function renderProfile(profile) {
+    axesEl.innerHTML = '';
+    ['activation', 'sensory', 'social', 'formality'].forEach(key => {
+      axesEl.appendChild(renderAxisBar(key, profile[key]));
     });
 
-    // scene / time はタグ表示
+    // time はバー表示
+    const timeVal = timeToValue(profile.time);
+    if (profile.time !== null) {
+      axesEl.appendChild(renderAxisBar('time', timeVal));
+    } else {
+      axesEl.appendChild(renderAxisBar('time', null));
+    }
+
+    // scene はラベル行として表示
     tagsEl.innerHTML = '';
-    ['scene', 'time'].forEach(key => {
-      if (profile[key]) {
-        const tag = document.createElement('span');
-        tag.className = 'axis-tag';
-        tag.textContent = key === 'scene' ? `📍 ${profile[key]}` : `🕐 ${profile[key]}`;
-        tagsEl.appendChild(tag);
-      }
-    });
+    const sceneItem = document.createElement('div');
+    sceneItem.className = 'axis-item';
+    const sceneLbl = document.createElement('div');
+    sceneLbl.className = 'axis-label-full';
+    sceneLbl.textContent = `使用シーン（仕事・寝室など）`;
+    const sceneVal = document.createElement('div');
+    sceneVal.style.cssText = 'font-size:10px; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;';
+    sceneVal.textContent = profile.scene ? `📍 ${profile.scene}` : '—';
+    if (!profile.scene) sceneVal.style.color = 'var(--border)';
+    sceneItem.appendChild(sceneLbl);
+    sceneItem.appendChild(sceneVal);
+    tagsEl.appendChild(sceneItem);
   }
 
   // 商品ごとのテーマ（背景グラデーション + 絵文字）
@@ -687,24 +807,31 @@
   function renderRecommendations(list, agent) {
     if (!list || list.length === 0) return;
     recoEl.innerHTML = '';
-    const showLinks = (agent === 'closing' || agent === 'proposal');
     list.forEach(r => {
-      const card = document.createElement('div');
+      const card = document.createElement('a');
       card.className = `reco-card${r.rank === 1 ? ' rank-1' : ''}`;
-      const slug = productSlug(r.product);
-      const linkHtml = showLinks
-        ? `<a class="reco-link" href="https://lifeofaroma.thebase.in/search?q=${encodeURIComponent(r.product)}" target="_blank">詳細・購入 →</a>`
-        : '';
+      card.href = `https://lifeofaroma.thebase.in/search?q=${encodeURIComponent(r.product)}`;
+      card.target = '_blank';
+      const meta = PRODUCT_META[r.product];
+      const typeBadge = meta ? `<span class="reco-type-badge">${meta.type}</span>` : '';
+      let metaHtml = '';
+      if (meta && meta.type === 'ブレンドオイル' && meta.ingredients.length > 0) {
+        const unverifiedBadge = !meta.verified ? ' <span class="reco-meta-unverified">⚠️ 暫定</span>' : '';
+        metaHtml = `<div class="reco-meta"><span class="reco-meta-label">(成分)</span><span class="reco-meta-ingredients">${meta.ingredients.join(' · ')}</span>${unverifiedBadge}</div>`;
+      }
       card.innerHTML = `
         <div class="reco-header">
           <div class="reco-rank">${r.rank}</div>
           <div class="reco-name">${r.product}</div>
+          ${typeBadge}
           <div class="reco-score-text">${r.match_score}%</div>
         </div>
         <div class="reco-score-bar-wrap"><div class="reco-score-bar" style="width:${r.match_score}%"></div></div>
         <div class="reco-reason">${r.reason}</div>
-        ${linkHtml}
+        ${metaHtml}
       `;
+      const miniAxes = renderMiniAxes(r.product);
+      if (miniAxes) card.appendChild(miniAxes);
       recoEl.appendChild(card);
     });
   }
@@ -774,39 +901,78 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history }),
       });
-      const data = await res.json();
 
-      chatEl.removeChild(thinkingWrap);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let aiBubbleEl = null;
+      let aiBadgeEl = null;
+      let aiBubbleWrap = null;
+      let streamedText = '';
 
-      if (data.error) {
-        addBubble('ai', `エラーが発生しました: ${data.error}`, 'hearing');
-      } else {
-        addBubble('ai', data.reply, data.current_agent);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          let chunk;
+          try { chunk = JSON.parse(line.slice(6)); } catch { continue; }
 
-        // 会話履歴を更新
-        history.push({ role: 'user', content: text });
-        history.push({ role: 'assistant', content: JSON.stringify(data) });
+          if (chunk.error) {
+            chatEl.removeChild(thinkingWrap);
+            addBubble('ai', `エラーが発生しました: ${chunk.error}`, 'hearing');
+            break;
+          }
 
-        // 右パネル更新
-        if (data.profile) {
-          currentProfile = data.profile;
-          renderProfile(currentProfile);
-        }
-        if (data.recommendations && data.recommendations.length > 0) {
-          renderRecommendations(data.recommendations, data.current_agent);
+          if (chunk.text !== undefined) {
+            // 最初のテキストが来たらthinkingを消してバブル生成
+            if (!aiBubbleEl) {
+              chatEl.removeChild(thinkingWrap);
+              aiBubbleWrap = document.createElement('div');
+              aiBubbleWrap.className = 'bubble-wrap ai';
+              aiBadgeEl = document.createElement('div');
+              aiBadgeEl.className = 'agent-badge';
+              aiBadgeEl.textContent = 'ヒアリング中';
+              aiBubbleWrap.appendChild(aiBadgeEl);
+              aiBubbleEl = document.createElement('div');
+              aiBubbleEl.className = 'bubble ai';
+              aiBubbleWrap.appendChild(aiBubbleEl);
+              chatEl.appendChild(aiBubbleWrap);
+            }
+            streamedText += chunk.text;
+            aiBubbleEl.textContent = streamedText.replace(/\\n/g, '\n');
+            chatEl.scrollTop = chatEl.scrollHeight;
+          }
 
-          // hearing → proposal 切り替え時にチャット内フィーチャードカードを表示（上位3件）
-          if (prevAgent === 'hearing' && data.current_agent === 'proposal') {
-            const top3 = data.recommendations
-              .sort((a, b) => a.rank - b.rank)
-              .slice(0, 3);
-            if (top3.length > 0) showFeaturedCards(top3);
+          if (chunk.done) {
+            const data = chunk;
+            // バッジ・進捗を確定値で更新
+            if (aiBadgeEl) aiBadgeEl.textContent = agentLabel(data.current_agent);
+            if (data.current_agent === 'hearing' && typeof data.filled_axes === 'number') {
+              const pct = document.createElement('div');
+              pct.className = 'agent-badge-progress';
+              pct.textContent = `${Math.round(data.filled_axes / 6 * 100)}%`;
+              aiBubbleWrap.insertBefore(pct, aiBubbleEl);
+            }
+            if (aiBubbleEl) aiBubbleEl.textContent = data.reply || streamedText;
+
+            history.push({ role: 'user', content: text });
+            history.push({ role: 'assistant', content: JSON.stringify(data) });
+
+            if (data.profile) { currentProfile = data.profile; renderProfile(currentProfile); }
+            if (data.recommendations && data.recommendations.length > 0) {
+              renderRecommendations(data.recommendations, data.current_agent);
+              if (prevAgent === 'hearing' && data.current_agent === 'proposal') {
+                const top3 = data.recommendations.sort((a, b) => a.rank - b.rank).slice(0, 3);
+                if (top3.length > 0) showFeaturedCards(top3);
+              }
+            }
+            prevAgent = data.current_agent;
           }
         }
-        prevAgent = data.current_agent;
       }
     } catch (err) {
-      chatEl.removeChild(thinkingWrap);
+      if (thinkingWrap.parentNode) chatEl.removeChild(thinkingWrap);
       addBubble('ai', 'ネットワークエラーが発生しました。', 'hearing');
     }
 
