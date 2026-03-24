@@ -312,14 +312,14 @@
 
     .thinking { opacity: 0.5; font-style: italic; font-size: 13px; }
 
-    /* ── シーン選択カード ── */
-    .scene-choices {
-      padding: 10px 16px 14px;
+    /* ── シーン選択カード（チャット内インライン） ── */
+    .chat-scene-choices {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
+      max-width: 80%;
+      animation: fadeInUp 0.3s ease;
     }
-    .scene-choices.hidden { display: none; }
     .scene-btn {
       padding: 0;
       border: 1.5px solid var(--border);
@@ -454,28 +454,6 @@
   <!-- 左: チャット -->
   <div class="chat-panel">
     <div id="chat-messages"></div>
-    <div class="scene-choices" id="scene-choices">
-      <button class="scene-btn" data-key="work"    data-scene="仕事中・在宅ワーク中に使いたい">
-        <div class="scene-btn-img">💼</div>
-        <div class="scene-btn-label">仕事中・在宅</div>
-      </button>
-      <button class="scene-btn" data-key="sleep"   data-scene="寝る前、寝室で使いたい">
-        <div class="scene-btn-img">🌙</div>
-        <div class="scene-btn-label">寝る前・寝室</div>
-      </button>
-      <button class="scene-btn" data-key="relax"   data-scene="リビングでくつろぐときに使いたい">
-        <div class="scene-btn-img">🛋️</div>
-        <div class="scene-btn-label">リビングで<br>くつろぐ</div>
-      </button>
-      <button class="scene-btn" data-key="outdoor" data-scene="外出やお出かけのときに使いたい">
-        <div class="scene-btn-img">🌿</div>
-        <div class="scene-btn-label">外出・お出かけ</div>
-      </button>
-      <button class="scene-btn" data-key="gift"    data-scene="ギフト・プレゼント用に選びたい">
-        <div class="scene-btn-img">🎁</div>
-        <div class="scene-btn-label">ギフト・<br>プレゼント用</div>
-      </button>
-    </div>
     <div class="input-area">
       <input type="text" id="user-input" placeholder="どんな気分ですか？どんな場面で使いたいですか？" />
       <button id="send-btn">送信</button>
@@ -498,19 +476,76 @@
 </main>
 
 <script>
-  const chatEl      = document.getElementById('chat-messages');
-  const inputEl     = document.getElementById('user-input');
-  const sendBtn     = document.getElementById('send-btn');
-  const axesEl      = document.getElementById('profile-axes');
-  const tagsEl      = document.getElementById('profile-tags');
-  const recoEl      = document.getElementById('reco-list');
-  const sceneChoices = document.getElementById('scene-choices');
+  const chatEl  = document.getElementById('chat-messages');
+  const inputEl = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
+  const axesEl  = document.getElementById('profile-axes');
+  const tagsEl  = document.getElementById('profile-tags');
+  const recoEl  = document.getElementById('reco-list');
 
   let history = [];
   let currentProfile = { activation: null, sensory: null, social: null, formality: null, scene: null, time: null };
   let prevAgent = 'hearing';
 
-function initChat() {
+  // シーン定義（画像生成後は key.png を参照）
+  const SCENES = [
+    { key: 'work',    scene: '仕事中・在宅ワーク中に使いたい',  label: '仕事中・在宅',       emoji: '💼' },
+    { key: 'sleep',   scene: '寝る前、寝室で使いたい',          label: '寝る前・寝室',       emoji: '🌙' },
+    { key: 'relax',   scene: 'リビングでくつろぐときに使いたい', label: 'リビングで\nくつろぐ', emoji: '🛋️' },
+    { key: 'outdoor', scene: '外出やお出かけのときに使いたい',   label: '外出・お出かけ',     emoji: '🌿' },
+    { key: 'gift',    scene: 'ギフト・プレゼント用に選びたい',  label: 'ギフト・\nプレゼント用', emoji: '🎁' },
+  ];
+
+  function addSceneCards() {
+    const wrap = document.createElement('div');
+    wrap.id = 'scene-cards-wrap';
+    wrap.className = 'bubble-wrap ai';
+
+    const grid = document.createElement('div');
+    grid.className = 'chat-scene-choices';
+
+    SCENES.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'scene-btn';
+      btn.dataset.key = s.key;
+      btn.dataset.scene = s.scene;
+
+      // 生成済み画像があれば使う、なければ絵文字グラデーション
+      const imgDiv = document.createElement('div');
+      imgDiv.className = 'scene-btn-img';
+      const img = document.createElement('img');
+      img.src = `/images/scenes/${s.key}.png`;
+      img.alt = s.label;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:0;';
+      img.onerror = () => { img.remove(); imgDiv.textContent = s.emoji; };
+      imgDiv.appendChild(img);
+
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'scene-btn-label';
+      labelDiv.innerHTML = s.label.replace('\n', '<br>');
+
+      btn.appendChild(imgDiv);
+      btn.appendChild(labelDiv);
+
+      btn.addEventListener('click', () => {
+        removeSceneCards();
+        inputEl.value = s.scene;
+        sendMessage();
+      });
+      grid.appendChild(btn);
+    });
+
+    wrap.appendChild(grid);
+    chatEl.appendChild(wrap);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  function removeSceneCards() {
+    const wrap = document.getElementById('scene-cards-wrap');
+    if (wrap) wrap.remove();
+  }
+
+  function initChat() {
     history = [];
     currentProfile = { activation: null, sensory: null, social: null, formality: null, scene: null, time: null };
     prevAgent = 'hearing';
@@ -518,8 +553,8 @@ function initChat() {
     axesEl.innerHTML = '';
     tagsEl.innerHTML = '';
     recoEl.innerHTML = '<div class="empty-state">会話を始めると<br>おすすめが表示されます</div>';
-    sceneChoices.classList.remove('hidden');
     addBubble('ai', 'こんにちは！どんな場面で香りを使いたいですか？\nたとえば「仕事中」「寝る前」「外出のとき」など、ふとした気分でも大丈夫ですよ。', 'hearing');
+    addSceneCards();
   }
 
   // 初期化
@@ -720,7 +755,7 @@ function initChat() {
 
     inputEl.value = '';
     sendBtn.disabled = true;
-    sceneChoices.classList.add('hidden');
+    removeSceneCards();
     addBubble('user', text, null);
 
     // thinking表示
@@ -781,16 +816,6 @@ function initChat() {
 
   sendBtn.addEventListener('click', sendMessage);
   inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); });
-
-  // シーン選択ボタン
-  sceneChoices.querySelectorAll('.scene-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const scene = btn.dataset.scene;
-      inputEl.value = scene;
-      sceneChoices.classList.add('hidden');
-      sendMessage();
-    });
-  });
 
   // 初期プロファイル表示
   renderProfile(currentProfile);
