@@ -1,14 +1,14 @@
 # KAORILOGOプロトタイプ — 現状ステータス
 
-最終更新: 2026-03-24
-現在フェーズ: **ステップ4（動作確認・品質改善）**
+最終更新: 2026-03-25
+現在フェーズ: **ステップ4（動作確認・品質改善）→ Railwayデプロイ準備中**
 
 ---
 
 ## 起動方法
 
 ```bash
-cd /Users/iiwabook/VSCode/kaorilogo-prototype
+cd /Users/iiwabook/VSCode/projects/kaorilogo-prototype
 ANTHROPIC_API_KEY="sk-ant-api03-..." node server.js
 ```
 → ブラウザで `http://localhost:3000`
@@ -50,11 +50,14 @@ projects/kaorilogo/
 
 ---
 
-## 次回やること（2026-03-25）
+## 次回やること
 
-- [ ] 今日の変更をgitコミット（ストリーミング対応・UI修正一式）
-- [ ] 動作確認（ストリーミング・改行・各UI修正）
-- [ ] 香りロゴさんへのヒアリング：ブレンドオイル成分の確認（_STATUS.md 下部参照）
+- [ ] **Railway デプロイ**（次の最優先）
+  1. https://railway.app → 「Login with GitHub」
+  2. 「New Project」→「Deploy from GitHub repo」→ `iwaiwawaiwai/kaorilogo-prototype`
+  3. 「Variables」→ `ANTHROPIC_API_KEY` を設定
+  4. 自動デプロイ → URL発行
+- [ ] 香りロゴさんへのヒアリング：ブレンドオイル成分の確認
 
 ---
 
