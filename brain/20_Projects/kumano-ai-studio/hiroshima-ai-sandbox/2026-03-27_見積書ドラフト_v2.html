@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>見積書セット v2 — リアルタイムバス遅延情報サービス（広島日発バス様）【全3葉】</title>
+  <style>
+    /* ===== Base ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
+      font-size: 13px;
+      color: #1a1a1a;
+      background: #f0f2f5;
+    }
+
+    /* ===== Page wrapper ===== */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      margin: 24px auto;
+      padding: 20mm 18mm;
+      box-shadow: 0 2px 12px rgba(0,0,0,.12);
+      page-break-after: always;
+      position: relative;
+    }
+
+    /* ===== Print ===== */
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; box-shadow: none; }
+    }
+
+    /* ===== Common Header ===== */
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 3px solid #1a56db;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .doc-title { font-size: 22px; font-weight: 700; color: #1a56db; letter-spacing: .05em; }
+    .doc-meta { text-align: right; line-height: 1.8; color: #555; font-size: 12px; }
+    .doc-meta .company { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+
+    /* ===== Page label (badge) ===== */
+    .page-label {
+      display: inline-block;
+      background: #1a56db;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      letter-spacing: .1em;
+    }
+    .page-label.supplement {
+      background: #059669;
+    }
+
+    /* ===== Version badge ===== */
+    .version-badge {
+      display: inline-block;
+      background: #fef3c7;
+      border: 1.5px solid #f59e0b;
+      color: #92400e;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-left: 8px;
+      letter-spacing: .05em;
+    }
+
+    /* ===== Changelog box ===== */
+    .changelog {
+      background: #fef3c7;
+      border: 1.5px solid #f59e0b;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+    .changelog strong { color: #92400e; }
+
+    /* ===== To/From block ===== */
+    .parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .party-box {
+      border: 1px solid #dde3f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      background: #f7f9ff;
+    }
+    .party-box h3 { font-size: 10px; color: #6b7a99; letter-spacing: .1em; margin-bottom: 6px; }
+    .party-box .name { font-size: 15px; font-weight: 700; }
+    .party-box .sub { color: #555; font-size: 12px; margin-top: 2px; }
+
+    /* ===== Summary total ===== */
+    .total-box {
+      background: #f0f5ff;
+      border: 2px solid #1a56db;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-box .label { font-size: 13px; color: #444; }
+    .total-box .amount { font-size: 26px; font-weight: 700; color: #1a56db; }
+    .total-box .sub { font-size: 11px; color: #888; margin-top: 2px; }
+
+    /* ===== Tables ===== */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    thead { background: #1a56db; color: #fff; }
+    thead th { padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; }
+    tbody tr:nth-child(even) { background: #f7f9ff; }
+    tbody td { padding: 9px 10px; border-bottom: 1px solid #e8ecf5; font-size: 12px; vertical-align: top; }
+    .td-amount { text-align: right; font-weight: 600; white-space: nowrap; }
+    tfoot td { padding: 10px; font-weight: 700; border-top: 2px solid #1a56db; }
+    .tfoot-label { text-align: right; font-size: 13px; }
+    .tfoot-amount { text-align: right; font-size: 15px; color: #1a56db; }
+    .note-row td { background: #f3f4f6; font-size: 11px; color: #4b5563; padding: 6px 10px; }
+
+    /* ===== Supplement tables ===== */
+    .supp-table thead { background: #059669; }
+    .supp-table tfoot td { border-top-color: #059669; }
+    .tfoot-amount-green { text-align: right; font-size: 15px; color: #059669; }
+
+    /* ===== Section title ===== */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a56db;
+      border-left: 4px solid #1a56db;
+      padding-left: 8px;
+      margin: 22px 0 10px;
+    }
+    .section-title.green {
+      color: #059669;
+      border-left-color: #059669;
+    }
+
+    /* ===== Condition list ===== */
+    .cond-list { list-style: none; padding: 0; margin: 0 0 16px 0; }
+    .cond-list li {
+      padding: 7px 10px 7px 28px;
+      border-bottom: 1px solid #edf0f7;
+      position: relative;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .cond-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 8px;
+      color: #1a56db;
+      font-weight: 700;
+    }
+    .cond-list li.exclude::before { content: "✕"; color: #9ca3af; }
+    .cond-list li.note::before  { content: "—"; color: #9ca3af; }
+
+    /* ===== Two-column ===== */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    /* ===== Pill tag ===== */
+    .included { background: #dbeafe; color: #1a56db; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+    .excluded { background: #f3f4f6; color: #6b7280; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+    .tag-estimate { background: #fef3c7; color: #92400e; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+    .tag-confirmed { background: #d1fae5; color: #065f46; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+    /* ===== Footer ===== */
+    .page-footer {
+      position: absolute;
+      bottom: 14mm;
+      left: 18mm;
+      right: 18mm;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #aaa;
+      border-top: 1px solid #eee;
+      padding-top: 6px;
+    }
+
+    /* ===== Diagram (Page 3) ===== */
+    .diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin: 20px 0;
+    }
+    .dia-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+    .dia-box {
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 120px;
+    }
+    .dia-box .label { font-size: 10px; font-weight: 400; color: inherit; opacity: .8; }
+    .dia-box.blue  { background: #dbeafe; border: 2px solid #1a56db; color: #1a56db; }
+    .dia-box.green { background: #dbeafe; border: 2px solid #1a56db; color: #1a56db; }
+    .dia-box.orange{ background: #f3f4f6; border: 2px solid #9ca3af; color: #374151; }
+    .dia-box.gray  { background: #f3f4f6; border: 2px solid #9ca3af; color: #374151; }
+    .dia-arrow {
+      font-size: 18px;
+      color: #9ca3af;
+      margin: 4px 0;
+      text-align: center;
+    }
+    .dia-label {
+      font-size: 10px;
+      color: #6b7280;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 2px 8px;
+      text-align: center;
+    }
+
+    /* ===== Roadmap ===== */
+    .roadmap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .rm-step {
+      border-radius: 8px;
+      border: 1.5px solid #e5e7eb;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .rm-step.current { border-color: #1a56db; background: #f0f5ff; }
+    .rm-step .phase { font-size: 10px; color: #9ca3af; margin-bottom: 4px; }
+    .rm-step .rm-title { font-size: 12px; font-weight: 700; }
+    .rm-step .rm-date { font-size: 11px; color: #6b7280; margin-top: 4px; }
+    .rm-step.current .rm-title { color: #1a56db; }
+
+    /* ===== Info box ===== */
+    .info-box {
+      background: #f0f5ff;
+      border-left: 4px solid #1a56db;
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .info-box.green {
+      background: #f0fdf4;
+      border-left-color: #059669;
+    }
+    .info-box.amber {
+      background: #fffbeb;
+      border-left-color: #d97706;
+    }
+
+    /* ===== Value box ===== */
+    .value-total-box {
+      background: #f0fdf4;
+      border: 2px solid #059669;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .value-total-box .label { font-size: 13px; color: #444; }
+    .value-total-box .amount { font-size: 22px; font-weight: 700; color: #059669; }
+    .value-total-box .sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+    /* ===== Price derivation ===== */
+    .price-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .price-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      font-size: 12px;
+    }
+    .price-step .step-num {
+      background: #1a56db;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .price-step .step-body { flex: 1; }
+    .price-step .step-value { font-weight: 700; color: #1a56db; text-align: right; white-space: nowrap; }
+    .price-step.result {
+      background: #f0f5ff;
+      border-color: #1a56db;
+      border-width: 2px;
+    }
+    .price-step.result .step-num { background: #059669; }
+    .price-step.result .step-value { font-size: 16px; color: #1a1a1a; }
+
+    /* ===== Stamp area ===== */
+    .stamp-row {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+    .stamp-box {
+      width: 58px;
+      height: 58px;
+      border: 1.5px solid #ccc;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #aaa;
+      gap: 4px;
+    }
+    .stamp-box span { font-size: 10px; color: #ccc; }
+
+    /* ===== Qualitative list ===== */
+    .qual-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .qual-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .qual-item .q-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ===== Comparison bar ===== */
+    .comp-bar-wrap {
+      margin-bottom: 6px;
+    }
+    .comp-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+    .comp-bar {
+      height: 10px;
+      border-radius: 5px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+    .comp-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+    }
+    .bar-market { background: #9ca3af; }
+    .bar-inhouse { background: #f59e0b; }
+    .bar-proposed { background: #1a56db; }
+  </style>
+</head>
+<body>
+
+<!-- ===================== PAGE 1: 見積書 ===================== -->
+<div class="page">
+  <span class="page-label">第1葉 — 見積書</span>
+
+  <div class="doc-header">
+    <div>
+      <div class="doc-title">お見積書 <span class="version-badge">v2 / KAS-2026-002</span></div>
+    </div>
+    <div class="doc-meta">
+      <div>見積番号：KAS-2026-002</div>
+      <div>発行日：2026年4月　　日</div>
+      <div>有効期限：発行日より30日間</div>
+      <div class="company" style="margin-top:6px;">KUMANO AI Studio 設立準備室<br>代表　岩政　　</div>
+    </div>
+  </div>
+
+
+  <div class="parties">
+    <div class="party-box">
+      <h3>お見積先</h3>
+      <div class="name">広島バス株式会社</div>
+      <div class="sub">ご担当者様</div>
+    </div>
+    <div class="party-box" style="background:#fff;">
+      <h3>お見積元</h3>
+      <div class="name">KUMANO AI Studio</div>
+      <div class="sub">設立準備室（2026年4月21日 法人設立予定）<br>〒 　　　　　　　<br>E-mail：</div>
+    </div>
+  </div>
+
+  <div class="stamp-row">
+    <div class="stamp-box"><span>担当</span></div>
+    <div class="stamp-box"><span>確認</span></div>
+    <div class="stamp-box"><span>承認</span></div>
+  </div>
+
+  <div class="total-box">
+    <div>
+      <div class="label">お見積金額（合計）</div>
+      <div class="sub">※初期費用 + 月額費用（12ヶ月）の合計</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="amount">¥6,360,000－</div>
+      <div class="sub">税抜 ／ 消費税別途（10%）</div>
+    </div>
+  </div>
+
+  <!-- 初期費用 -->
+  <div class="section-title">■ 初期導入費用（一括）</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:38%">項目</th>
+        <th style="width:32%">内容</th>
+        <th style="width:10%">数量</th>
+        <th style="width:20%">金額（税抜）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>本番環境構築・インフラ設定</td>
+        <td>クラウドサーバー初期設定・GTFS-RTデータ連携設定・SSL/セキュリティ設定</td>
+        <td>1式</td>
+        <td class="td-amount">¥1,000,000</td>
+      </tr>
+      <tr>
+        <td>データ最適化・表示調整</td>
+        <td>貴社運行データ（GTFS-RT）の精度検証・UI最終調整</td>
+        <td>1式</td>
+        <td class="td-amount">¥800,000</td>
+      </tr>
+      <tr>
+        <td>導入支援・オンボーディング</td>
+        <td>操作説明・QRコード用データ提供・現場テスト立会い（2回まで）</td>
+        <td>1式</td>
+        <td class="td-amount">¥700,000</td>
+      </tr>
+      <tr>
+        <td>初期テスト・品質検証（QA）</td>
+        <td>主要路線での動作確認・iOS/Android表示検証</td>
+        <td>1式</td>
+        <td class="td-amount">¥500,000</td>
+      </tr>
+      <tr class="note-row">
+        <td colspan="4">⚠ 初期費用は法人設立後（2026年4月21日以降）に請求いたします。</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" class="tfoot-label">初期費用 小計</td>
+        <td class="tfoot-amount">¥3,000,000</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- 月額 -->
+  <div class="section-title">■ 月額利用料（SaaS・継続契約）</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:38%">項目</th>
+        <th style="width:32%">内容</th>
+        <th style="width:10%">月数</th>
+        <th style="width:20%">金額（税抜）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>月額利用料（スタンダードプラン）</td>
+        <td>インフラ・保守・標準アップデート・サポート込み</td>
+        <td>12ヶ月</td>
+        <td class="td-amount">¥280,000/月</td>
+      </tr>
+      <tr class="note-row">
+        <td colspan="4">
+          ※ 月額費用には別紙「サービス前提条件（第2葉）」記載の範囲がすべて含まれます。<br>
+          【算定根拠の要約】年間の定量的導入効果（電話対応削減・クレーム削減・乗車機会増加）の合計 <strong>¥7,462,500</strong> を月間価値に換算した上限額（¥621,875/月）のうち、弊社の取り分を約45%（¥280,000/月）に設定。残りの約55%（¥342,000/月 相当）は貴社の純利益として残る設計です。詳細は別紙「<strong>導入効果・価格算定根拠（補足資料 KAS-2026-002）</strong>」をご参照ください。
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" class="tfoot-label">月額 × 12ヶ月 小計</td>
+        <td class="tfoot-amount">¥3,360,000</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="info-box">
+    本見積書の内容は、別紙「サービス前提条件（第2葉）」「サービス概要図（第3葉）」と一体のものです。
+    価格算定の根拠については「導入効果・価格算定根拠（補足資料）」を別途ご参照ください。
+  </div>
+
+  <div class="page-footer">
+    <span>KUMANO AI Studio 設立準備室</span>
+    <span>KAS-2026-002 ／ 第1葉（全3葉）</span>
+  </div>
+</div>
+
+
+<!-- ===================== PAGE 2: 前提条件 ===================== -->
+<div class="page">
+  <span class="page-label">第2葉 — サービス前提条件</span>
+
+  <div class="doc-header">
+    <div class="doc-title">サービス前提条件</div>
+    <div class="doc-meta">
+      <div>見積番号：KAS-2026-002</div>
+      <div>2026年4月　　日</div>
+      <div class="company" style="margin-top:6px;">KUMANO AI Studio 設立準備室</div>
+    </div>
+  </div>
+
+  <!-- 提供形態 -->
+  <div class="section-title">■ 提供形態（SaaSモデル）</div>
+  <ul class="cond-list">
+    <li>本サービスは <strong>ソフトウェア・システムの売買（買い切り）ではなく</strong>、クラウドを通じた <strong>利用権の提供</strong> です。システム・ソースコード・サーバーは弊社が保有・管理します。</li>
+    <li>利用期間中、弊社がインフラの維持・監視・セキュリティ対応を行います。貴社にサーバー管理の手間は発生しません。</li>
+    <li>利用期間の最小単位は <strong>12ヶ月</strong> とします。更新は1ヶ月前に書面にて合意の上、自動更新とします。</li>
+    <li>本見積は <strong>貴社担当路線を対象</strong> とします。他路線・他事業者への展開は別途ご相談ください。</li>
+    <li>将来的に他の交通事業者へ横展開する場合も、本サービスの知的財産権は弊社に帰属します。</li>
+  </ul>
+
+  <!-- 月額に含まれるもの -->
+  <div class="two-col" style="margin-bottom:16px;">
+    <div>
+      <div class="section-title">■ 月額費用に含まれる範囲 <span class="included">含む</span></div>
+      <ul class="cond-list">
+        <li>クラウドインフラ（サーバー・帯域・ストレージ）の維持費</li>
+        <li>GTFS-RTオープンデータの継続的な取得・処理・最適化</li>
+        <li>既存機能の <strong>不具合修正</strong>（初報から3営業日以内に対応）</li>
+        <li>UI/UXの <strong>軽微な改善</strong>（月1〜2回のアップデート）</li>
+        <li>AI推論モデルの継続的な <strong>精度改善</strong></li>
+        <li>メール・オンラインでの <strong>技術サポート</strong>（平日対応）<br><small style="color:#6b7280;">緊急の場合は別途 SLA にて対応（詳細は第2葉 SLA 概要を参照）</small></li>
+        <li>法令・GTFS仕様変更への <strong>自動追従</strong></li>
+      </ul>
+    </div>
+    <div>
+      <div class="section-title">■ 月額費用に含まれない範囲 <span class="excluded">別途</span></div>
+      <ul class="cond-list">
+        <li class="exclude">貴社専用の <strong>大規模カスタム機能</strong> の開発（別途見積）</li>
+        <li class="exclude">バス停・車内の <strong>物理的な掲示物</strong>（QRコードステッカー等）の印刷・設置費</li>
+        <li class="exclude">貴社社内システムとの <strong>API連携開発</strong>（別途見積）</li>
+        <li class="exclude">現地への <strong>訪問対応</strong>（3回/年を超える分）</li>
+        <li class="note">GTFS-RT（国交省・バス協会提供のオープンデータ）自体の欠損・遅延に起因する情報誤差は免責とします。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 法人設立について -->
+  <div class="section-title">■ 法人設立・契約スケジュール</div>
+  <ul class="cond-list">
+    <li>弊社は <strong>2026年4月21日</strong> に法人登記を完了する予定です。</li>
+    <li>本見積書は設立準備室名義での提示となりますが、<strong>正式な契約締結・請求は法人設立後</strong>（2026年4月21日以降）に行います。</li>
+    <li>設立前のこの期間において、本見積内容への <strong>基本合意書（MOU：Memorandum of Understanding）のご締結</strong> をお願いできますと幸いです。締結後、速やかに準備を開始します。</li>
+  </ul>
+
+  <!-- SLA概要 -->
+  <div class="section-title">■ SLA（サービス品質の基本方針）</div>
+  <table>
+    <thead><tr><th>項目</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>サービス稼働目標</td><td>月間 99.0%以上（メンテナンス時間を除く）</td></tr>
+      <tr><td>障害対応</td><td>重大障害：検知後4時間以内に一次対応 ／ 軽微：3営業日以内</td></tr>
+      <tr><td>メンテナンス</td><td>定期メンテナンスは事前に3営業日前までに通知。深夜（0〜5時）帯を優先</td></tr>
+      <tr><td>データ更新頻度</td><td>GTFS-RT：15秒間隔（データ提供元の仕様に準拠）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>KUMANO AI Studio 設立準備室</span>
+    <span>KAS-2026-002 ／ 第2葉（全3葉）</span>
+  </div>
+</div>
+
+
+<!-- ===================== PAGE 3: 概要図 ===================== -->
+<div class="page">
+  <span class="page-label">第3葉 — サービス概要・構成図</span>
+
+  <div class="doc-header">
+    <div class="doc-title">サービス概要・構成図</div>
+    <div class="doc-meta">
+      <div>見積番号：KAS-2026-002</div>
+      <div>2026年4月　　日</div>
+      <div class="company" style="margin-top:6px;">KUMANO AI Studio 設立準備室</div>
+    </div>
+  </div>
+
+  <!-- サービス概要 -->
+  <div class="section-title">■ サービス概要</div>
+  <div class="info-box">
+    貴社が保有する <strong>GTFS-RTオープンデータ（リアルタイム運行情報）</strong> を活用し、乗客が <strong>スマートフォンから直感的にバスの遅延状況を確認できるAIサービス</strong> を提供します。
+    バス停に設置したQRコードを読み取るだけで、専用アプリのインストール不要でご利用いただけます。
+  </div>
+
+  <!-- システム構成図 -->
+  <div class="section-title">■ システム構成図</div>
+  <div class="diagram">
+    <div class="dia-row">
+      <div class="dia-box gray">
+        バスの車載GPS機器<br>
+        <span class="label">各路線・全バス</span>
+      </div>
+      <div style="font-size:20px;color:#9ca3af;">→</div>
+      <div class="dia-box gray">
+        運行情報インフラ<br>
+        <span class="label">（既存・弊社管理外）</span>
+      </div>
+      <div style="font-size:20px;color:#9ca3af;">→</div>
+      <div class="dia-box blue">
+        GTFS-RT<br>オープンデータ配信<br>
+        <span class="label">15秒間隔・無償利用</span>
+      </div>
+    </div>
+    <div class="dia-arrow">↓</div>
+    <div class="dia-label">データ取得・処理・AI解析</div>
+    <div class="dia-arrow">↓</div>
+    <div class="dia-row">
+      <div class="dia-box blue" style="min-width:180px;">
+        <strong>KUMANO AI Studio</strong><br>
+        クラウドサーバー（本番）<br>
+        <span class="label">Railway / AWS（検討中）</span>
+      </div>
+    </div>
+    <div class="dia-arrow">↓</div>
+    <div class="dia-label">Webアプリ配信（QRコード → URL → ブラウザ）</div>
+    <div class="dia-arrow">↓</div>
+    <div class="dia-row" style="gap:24px;">
+      <div class="dia-box green">
+        乗客のスマートフォン<br>
+        <span class="label">QRコード読取 → ブラウザ表示<br>アプリインストール不要</span>
+      </div>
+      <div class="dia-box orange">
+        貴社 管理画面<br>
+        <span class="label">QRコード管理<br>利用統計・アクセス状況</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- リリースロードマップ -->
+  <div class="section-title">■ リリースまでのロードマップ（案）</div>
+  <div class="roadmap">
+    <div class="rm-step current">
+      <div class="phase">STEP 1（現在）</div>
+      <div class="rm-title">合意・契約</div>
+      <div class="rm-date">4月上旬〜4/21</div>
+    </div>
+    <div class="rm-step">
+      <div class="phase">STEP 2</div>
+      <div class="rm-title">本番環境構築・QA</div>
+      <div class="rm-date">4月下旬〜5月中旬</div>
+    </div>
+    <div class="rm-step">
+      <div class="phase">STEP 3</div>
+      <div class="rm-title">クローズドβ</div>
+      <div class="rm-date">5月下旬（社内限定）</div>
+    </div>
+    <div class="rm-step">
+      <div class="phase">STEP 4</div>
+      <div class="rm-title">一般公開</div>
+      <div class="rm-date">6月〜（QR設置・広報）</div>
+    </div>
+  </div>
+
+  <!-- 将来拡張 -->
+  <div class="section-title">■ 将来の拡張（月額費用に含まれる継続改善）</div>
+  <div class="two-col">
+    <ul class="cond-list">
+      <li>AI到着予測精度の継続的な向上</li>
+      <li>混雑予測・乗換案内機能の追加</li>
+      <li>貴社管理画面への利用統計レポート追加</li>
+    </ul>
+    <ul class="cond-list">
+      <li>他路線・他バス会社への展開（横展開）</li>
+      <li>観光・インバウンド向け多言語対応（別途相談）</li>
+      <li>MaaS統合基盤（電車・タクシー連携）への拡張</li>
+    </ul>
+  </div>
+
+  <div class="info-box" style="margin-top:16px;">
+    <strong>ご採用いただいた場合のメリット：</strong><br>
+    ① 既存の運行情報インフラをそのまま活用 → <strong>新たな機器導入コストゼロ</strong><br>
+    ② サーバー・保守をすべて弊社が担当 → <strong>貴社のIT管理負担ゼロ</strong><br>
+    ③ AIが継続的に進化 → <strong>「作って終わり」でなく、長く使えるサービス</strong>
+  </div>
+
+  <div class="page-footer">
+    <span>KUMANO AI Studio 設立準備室</span>
+    <span>KAS-2026-002 ／ 第3葉（全3葉）</span>
+  </div>
+</div>
+
+
+
+</body>
+</html>

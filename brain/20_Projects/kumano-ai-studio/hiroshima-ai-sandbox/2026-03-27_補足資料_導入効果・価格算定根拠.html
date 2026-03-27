@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>補足資料 — 導入効果・価格算定根拠（広島日発バス様）KAS-2026-002</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
+      font-size: 13px;
+      color: #1a1a1a;
+      background: #f0f2f5;
+    }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      margin: 24px auto;
+      padding: 20mm 18mm;
+      box-shadow: 0 2px 12px rgba(0,0,0,.12);
+      position: relative;
+    }
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; box-shadow: none; }
+    }
+
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 3px solid #059669;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .doc-title { font-size: 20px; font-weight: 700; color: #059669; letter-spacing: .05em; }
+    .doc-meta { text-align: right; line-height: 1.8; color: #555; font-size: 12px; }
+    .doc-meta .company { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+
+    .page-label {
+      display: inline-block;
+      background: #059669;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      letter-spacing: .1em;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #059669;
+      border-left: 4px solid #059669;
+      padding-left: 8px;
+      margin: 22px 0 10px;
+    }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    thead { background: #059669; color: #fff; }
+    thead th { padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; }
+    tbody tr:nth-child(even) { background: #f0fdf4; }
+    tbody td { padding: 9px 10px; border-bottom: 1px solid #d1fae5; font-size: 12px; vertical-align: top; }
+    .td-amount { text-align: right; font-weight: 600; white-space: nowrap; }
+    tfoot td { padding: 10px; font-weight: 700; border-top: 2px solid #059669; }
+    .tfoot-label { text-align: right; font-size: 13px; }
+    .tfoot-amount { text-align: right; font-size: 15px; color: #059669; }
+    .note-row td { background: #f9fafb; font-size: 11px; color: #4b5563; padding: 6px 10px; }
+
+    .tag-estimate { background: #fef3c7; color: #92400e; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+    .tag-check    { background: #fee2e2; color: #991b1b; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+
+    .info-box {
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .info-box.amber {
+      background: #fffbeb;
+      border-left: 4px solid #d97706;
+    }
+    .info-box.green {
+      background: #f0fdf4;
+      border-left: 4px solid #059669;
+    }
+
+    /* ===== 定性効果リスト ===== */
+    .qual-ul { list-style: disc; padding-left: 18px; margin-bottom: 16px; }
+    .qual-ul li { font-size: 12px; line-height: 1.9; color: #1a1a1a; }
+
+    /* ===== 価格算定テーブル ===== */
+    .price-derive-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .price-derive-table td { padding: 9px 12px; font-size: 12px; border-bottom: 1px solid #d1fae5; vertical-align: middle; }
+    .price-derive-table .row-header { font-weight: 700; color: #374151; background: #f0fdf4; width: 44%; }
+    .price-derive-table .row-value  { text-align: right; font-weight: 700; color: #059669; white-space: nowrap; }
+    .price-derive-table .row-result td { background: #f0fdf4; border-top: 2px solid #059669; border-bottom: 2px solid #059669; }
+    .price-derive-table .row-result .row-value { font-size: 15px; color: #1a56db; }
+
+    .page-footer {
+      position: absolute;
+      bottom: 14mm;
+      left: 18mm;
+      right: 18mm;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #aaa;
+      border-top: 1px solid #eee;
+      padding-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <span class="page-label">補足資料 — 導入効果・価格算定根拠</span>
+
+  <div class="doc-header">
+    <div class="doc-title">導入効果・価格算定根拠</div>
+    <div class="doc-meta">
+      <div>関連見積番号：KAS-2026-002</div>
+      <div>対象：広島バス株式会社 担当路線</div>
+      <div>作成日：2026年4月　　日</div>
+      <div class="company" style="margin-top:6px;">KUMANO AI Studio 設立準備室</div>
+    </div>
+  </div>
+
+  <div class="info-box amber">
+    本資料は見積金額（KAS-2026-002）の根拠を可視化するための補足資料です。<span class="tag-estimate">試算</span> の値は現時点の仮定に基づくもので、実績データの提供により随時精緻化します。
+  </div>
+
+  <!-- ===== 定量効果 ===== -->
+  <div class="section-title">■ 定量効果（年間試算） ― 広島日発バス 担当路線</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24%">項目</th>
+        <th style="width:44%">算出ロジック</th>
+        <th style="width:11%">精度</th>
+        <th style="width:21%">年間効果（試算）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <strong>【負の解消①】</strong><br>
+          電話・問い合わせ<br>対応コスト削減
+        </td>
+        <td>
+          15分/件 × 年100件 × 担当者2名 × ¥2,000/h<br>
+          <small style="color:#6b7280;">「今どこ？」「何分後に来る？」系の電話が削減される想定</small>
+        </td>
+        <td><span class="tag-estimate">試算</span></td>
+        <td class="td-amount">¥100,000</td>
+      </tr>
+      <tr>
+        <td>
+          <strong>【負の解消②】</strong><br>
+          遅延クレーム対応<br>コスト削減
+        </td>
+        <td>
+          30分/件 × 年50件 × ¥2,500/h<br>
+          <small style="color:#6b7280;">情報提供による「知らなかった」型クレームの減少</small>
+        </td>
+        <td><span class="tag-estimate">試算</span></td>
+        <td class="td-amount">¥62,500</td>
+      </tr>
+      <tr>
+        <td>
+          <strong>【正の創出①】</strong><br>
+          乗車機会の増加<br>（AI予測・離脱防止）
+        </td>
+        <td>
+          5人増/便 × 20便/日 × ¥200 × 365日<br>
+          <small style="color:#6b7280;">
+            「待ち時間が分からない」ためタクシー・徒歩に流れていた層の取り込み。<br>
+            ・保守的ライン：5人/便（本試算の採用値）<br>
+            ・現実的ライン：10人/便（アップサイド）<br>
+            ・過大推計ライン：25人/便以上（採用しない）
+          </small>
+        </td>
+        <td><span class="tag-estimate">試算</span></td>
+        <td class="td-amount">¥7,300,000</td>
+      </tr>
+      <tr class="note-row">
+        <td colspan="4">
+          ※ 便数（20便/日）は現時点の仮定値。貴社の実績データで差し替えます。<br>
+          ※ 全路線への横展開は本試算の対象外です（別途ご相談）。
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" class="tfoot-label">年間定量効果 合計（試算）</td>
+        <td class="tfoot-amount">約 ¥7,462,500</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- ===== 定性効果 ===== -->
+  <div class="section-title">■ 定性効果</div>
+
+  <ul class="qual-ul">
+    <li>乗客満足度・利便性の向上（バスを「選ばれる移動手段」へ）</li>
+    <li>運行データの可視化による経営判断のDX化</li>
+    <li>「広島で最もIT活用が進む路線バス」としてのブランド差別化</li>
+    <li>定期券継続率・リピーター定着率の向上</li>
+    <li>社内のIT親和性向上と次のDX投資の足がかり</li>
+    <li>自治体・補助金申請時の「デジタル実績」として活用可能</li>
+  </ul>
+
+  <!-- ===== 価格算定ロジック ===== -->
+  <div class="section-title">■ サブスクリプション月額 算定ロジック</div>
+
+  <div class="info-box green">
+    上記の定量効果の合計が「顧客にとっての年間価値（上限値）」です。これを月割りした金額が月額の天井となり、
+    その範囲内で弊社の取り分（提案月額）を設定しています。
+  </div>
+
+  <table class="price-derive-table">
+    <tbody>
+      <tr>
+        <td class="row-header">① 年間定量効果 合計（上限値）</td>
+        <td>負の解消 ¥162,500 ＋ 正の創出 ¥7,300,000</td>
+        <td class="row-value">¥7,462,500 / 年</td>
+      </tr>
+      <tr>
+        <td class="row-header">② 月間価値の上限（÷ 12ヶ月）</td>
+        <td>¥7,462,500 ÷ 12</td>
+        <td class="row-value">≈ ¥621,875 / 月</td>
+      </tr>
+      <tr>
+        <td class="row-header">③ 貴社の年間純利益（残す分）</td>
+        <td>¥7,462,500 － 年間利用料 ¥3,360,000</td>
+        <td class="row-value">≈ ¥4,102,500 / 年</td>
+      </tr>
+      <tr class="row-result">
+        <td class="row-header">提案月額（弊社の取り分）</td>
+        <td>月間上限 ¥621,875 の約 45% ／ 貴社に55%（¥342,000/月相当）を残す設計</td>
+        <td class="row-value">¥280,000 / 月（税抜）</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-box amber">
+    <strong>試算精緻化のために必要なデータ（任意）：</strong><br>
+    ① 担当路線の1日あたり便数　② 問い合わせ対応件数（月次）
+  </div>
+
+  <div class="page-footer">
+    <span>KUMANO AI Studio 設立準備室</span>
+    <span>補足資料 / KAS-2026-002</span>
+  </div>
+</div>
+
+</body>
+</html>
